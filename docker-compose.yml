@@ -93,6 +93,7 @@ services:
       - INIT_RERANK_MODEL_NAME=${INIT_RERANK_MODEL_NAME:-}
       - INIT_RERANK_MODEL_BASE_URL=${INIT_RERANK_MODEL_BASE_URL:-}
       - INIT_RERANK_MODEL_API_KEY=${INIT_RERANK_MODEL_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
     depends_on:
       redis:
         condition: service_started

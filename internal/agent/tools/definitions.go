@@ -11,14 +11,14 @@ type AvailableTool struct {
 // Keep this in sync with registered tools in this package.
 func AvailableToolDefinitions() []AvailableTool {
 	return []AvailableTool{
-		{Name: "thinking", Label: "思考", Description: "动态和反思性的问题解决思考工具"},
-		{Name: "todo_write", Label: "制定计划", Description: "创建结构化的研究计划"},
-		{Name: "grep_chunks", Label: "关键词搜索", Description: "快速定位包含特定关键词的文档和分块"},
-		{Name: "knowledge_search", Label: "语义搜索", Description: "理解问题并查找语义相关内容"},
-		{Name: "list_knowledge_chunks", Label: "查看文档分块", Description: "获取文档完整分块内容"},
-		{Name: "query_knowledge_graph", Label: "查询知识图谱", Description: "从知识图谱中查询关系"},
-		{Name: "get_document_info", Label: "获取文档信息", Description: "查看文档元数据"},
-		{Name: "database_query", Label: "查询数据库", Description: "查询数据库中的信息"},
+		{Name: "thinking", Label: "Thinking", Description: "Dynamic and reflective problem-solving thinking tool"},
+		{Name: "todo_write", Label: "Formulate Plan", Description: "Create structured research plans"},
+		{Name: "grep_chunks", Label: "Keyword Search", Description: "Quickly locate documents and chunks containing specific keywords"},
+		{Name: "knowledge_search", Label: "Semantic Search", Description: "Understand problems and find semantically relevant content"},
+		{Name: "list_knowledge_chunks", Label: "View Document Chunks", Description: "Obtain complete document chunk content"},
+		{Name: "query_knowledge_graph", Label: "Query Knowledge Graph", Description: "Query relationships from the knowledge graph"},
+		{Name: "get_document_info", Label: "Get Document Information", Description: "View document metadata"},
+		{Name: "database_query", Label: "Query Database", Description: "Query information in the database"},
 	}
 }
 

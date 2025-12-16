@@ -765,7 +765,7 @@ func extractModelIDs(processedModels []*types.Model) (embeddingModelID, llmModel
 	return
 }
 
-// CheckOllamaStatus 检查Ollama服务状态
+// CheckOllamaStatus checks Ollama service status
 func (h *InitializationHandler) CheckOllamaStatus(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -777,17 +777,40 @@ func (h *InitializationHandler) CheckOllamaStatus(c *gin.Context) {
 		baseURL = "http://host.docker.internal:11434"
 	}
 
-	// 检查Ollama服务是否可用
+	// Check if Ollama service is available
 	err := h.ollamaService.StartService(ctx)
 	if err != nil {
-		logger.ErrorWithFields(ctx, err, nil)
+		logger.ErrorWithFields(ctx, err, map[string]interface{}{
+			"baseURL": baseURL,
+		})
+		
+		// Provide more detailed error information
+		errorMsg := err.Error()
+		suggestion := ""
+		
+		if strings.Contains(errorMsg, "connection refused") || strings.Contains(errorMsg, "connect: connection refused") {
+			suggestion = "Ollama service may not be running. Please check if Ollama is started at the target address"
+		} else if strings.Contains(errorMsg, "no such host") || strings.Contains(errorMsg, "host.docker.internal") {
+			suggestion = "Unable to resolve host.docker.internal. Please check Docker network configuration or try using an IP address"
+		} else if strings.Contains(errorMsg, "timeout") || strings.Contains(errorMsg, "deadline exceeded") {
+			suggestion = "Connection timeout. Please check network connection and firewall settings"
+		} else if strings.Contains(errorMsg, "network is unreachable") {
+			suggestion = "Network unreachable. Please check if the target address is correct"
+		}
+		
+		responseData := gin.H{
+			"available": false,
+			"error":     errorMsg,
+			"baseUrl":   baseURL,
+		}
+		
+		if suggestion != "" {
+			responseData["suggestion"] = suggestion
+		}
+		
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
-			"data": gin.H{
-				"available": false,
-				"error":     err.Error(),
-				"baseUrl":   baseURL,
-			},
+			"data":    responseData,
 		})
 		return
 	}
@@ -809,7 +832,7 @@ func (h *InitializationHandler) CheckOllamaStatus(c *gin.Context) {
 	})
 }
 
-// CheckOllamaModels 检查Ollama模型状态
+// CheckOllamaModels checks Ollama model status
 func (h *InitializationHandler) CheckOllamaModels(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -825,19 +848,19 @@ func (h *InitializationHandler) CheckOllamaModels(c *gin.Context) {
 		return
 	}
 
-	// 检查Ollama服务是否可用
+	// Check if Ollama service is available
 	if !h.ollamaService.IsAvailable() {
 		err := h.ollamaService.StartService(ctx)
 		if err != nil {
 			logger.ErrorWithFields(ctx, err, nil)
-			c.Error(errors.NewInternalServerError("Ollama服务不可用: " + err.Error()))
+			c.Error(errors.NewInternalServerError("Ollama service unavailable: " + err.Error()))
 			return
 		}
 	}
 
 	modelStatus := make(map[string]bool)
 
-	// 检查每个模型是否存在
+	// Check if each model exists
 	for _, modelName := range req.Models {
 		available, err := h.ollamaService.IsModelAvailable(ctx, modelName)
 		if err != nil {
@@ -860,7 +883,7 @@ func (h *InitializationHandler) CheckOllamaModels(c *gin.Context) {
 	})
 }
 
-// DownloadOllamaModel 异步下载Ollama模型
+// DownloadOllamaModel asynchronously downloads Ollama model
 func (h *InitializationHandler) DownloadOllamaModel(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -876,27 +899,27 @@ func (h *InitializationHandler) DownloadOllamaModel(c *gin.Context) {
 		return
 	}
 
-	// 检查Ollama服务是否可用
+	// Check if Ollama service is available
 	if !h.ollamaService.IsAvailable() {
 		err := h.ollamaService.StartService(ctx)
 		if err != nil {
 			logger.ErrorWithFields(ctx, err, nil)
-			c.Error(errors.NewInternalServerError("Ollama服务不可用: " + err.Error()))
+			c.Error(errors.NewInternalServerError("Ollama service unavailable: " + err.Error()))
 			return
 		}
 	}
 
-	// 检查模型是否已存在
+	// Check if model already exists
 	available, err := h.ollamaService.IsModelAvailable(ctx, req.ModelName)
 	if err != nil {
-		c.Error(errors.NewInternalServerError("检查模型状态失败: " + err.Error()))
+		c.Error(errors.NewInternalServerError("Failed to check model status: " + err.Error()))
 		return
 	}
 
 	if available {
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
-			"message": "模型已存在",
+			"message": "Model already exists",
 			"data": gin.H{
 				"modelName": req.ModelName,
 				"status":    "completed",
@@ -1000,17 +1023,17 @@ func (h *InitializationHandler) ListDownloadTasks(c *gin.Context) {
 	})
 }
 
-// ListOllamaModels 列出已安装的 Ollama 模型
+// ListOllamaModels lists installed Ollama models
 func (h *InitializationHandler) ListOllamaModels(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	logger.Info(ctx, "Listing installed Ollama models")
 
-	// 确保服务可用
+	// Ensure service is available
 	if !h.ollamaService.IsAvailable() {
 		if err := h.ollamaService.StartService(ctx); err != nil {
 			logger.ErrorWithFields(ctx, err, nil)
-			c.Error(errors.NewInternalServerError("Ollama服务不可用: " + err.Error()))
+			c.Error(errors.NewInternalServerError("Ollama service unavailable: " + err.Error()))
 			return
 		}
 	}
@@ -1037,8 +1060,8 @@ func (h *InitializationHandler) downloadModelAsync(ctx context.Context,
 ) {
 	logger.Infof(ctx, "Starting async download for model, task: %s", taskID)
 
-	// 更新任务状态为下载中
-	h.updateTaskStatus(taskID, "downloading", 0.0, "开始下载模型")
+	// Update task status to downloading
+	h.updateTaskStatus(taskID, "downloading", 0.0, "Starting model download")
 
 	// 执行下载，带进度回调
 	err := h.pullModelWithProgress(ctx, modelName, func(progress float64, message string) {
@@ -1060,36 +1083,36 @@ func (h *InitializationHandler) pullModelWithProgress(ctx context.Context,
 	modelName string,
 	progressCallback func(float64, string),
 ) error {
-	// 检查服务是否可用
+	// Check if service is available
 	if err := h.ollamaService.StartService(ctx); err != nil {
 		logger.ErrorWithFields(ctx, err, nil)
 		return err
 	}
 
-	// 检查模型是否已存在
+	// Check if model already exists
 	available, err := h.ollamaService.IsModelAvailable(ctx, modelName)
 	if err != nil {
 		logger.Error(ctx, "Failed to check model availability", err)
 		return err
 	}
 	if available {
-		progressCallback(100.0, "模型已存在")
+		progressCallback(100.0, "Model already exists")
 		return nil
 	}
 
-	// 创建下载请求
+	// Create download request
 	pullReq := &api.PullRequest{
 		Name: modelName,
 	}
 
-	// 使用Ollama客户端的Pull方法，带进度回调
+	// Use Ollama client's Pull method with progress callback
 	err = h.ollamaService.GetClient().Pull(ctx, pullReq, func(progress api.ProgressResponse) error {
 		progressPercent := 0.0
-		message := "下载中"
+		message := "Downloading"
 
 		if progress.Total > 0 && progress.Completed > 0 {
 			progressPercent = float64(progress.Completed) / float64(progress.Total) * 100
-			message = fmt.Sprintf("下载中: %.1f%% (%s)", progressPercent, progress.Status)
+			message = fmt.Sprintf("Downloading: %.1f%% (%s)", progressPercent, progress.Status)
 		} else if progress.Status != "" {
 			message = progress.Status
 		}
@@ -1471,24 +1494,24 @@ func (h *InitializationHandler) checkRemoteModelConnection(ctx context.Context,
 		Thinking:  &[]bool{false}[0], // for dashscope.aliyuncs qwen3-32b
 	}
 
-	// 使用聊天实例进行测试
+	// Use chat instance for testing
 	_, err = chatInstance.Chat(ctx, testMessages, testOptions)
 	if err != nil {
-		// 根据错误类型返回不同的错误信息
+		// Return different error messages based on error type
 		if strings.Contains(err.Error(), "401") || strings.Contains(err.Error(), "unauthorized") {
-			return false, "认证失败，请检查API Key"
+			return false, "Authentication failed, please check API Key"
 		} else if strings.Contains(err.Error(), "403") || strings.Contains(err.Error(), "forbidden") {
-			return false, "权限不足，请检查API Key权限"
+			return false, "Insufficient permissions, please check API Key permissions"
 		} else if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
-			return false, "API端点不存在，请检查Base URL"
+			return false, "API endpoint does not exist, please check Base URL"
 		} else if strings.Contains(err.Error(), "timeout") {
-			return false, "连接超时，请检查网络连接"
+			return false, "Connection timeout, please check network connection"
 		} else {
-			return false, fmt.Sprintf("连接失败: %v", err)
+			return false, fmt.Sprintf("Connection failed: %v", err)
 		}
 	}
 
-	// 连接成功，模型可用
+	// Connection successful, model is available
 	return true, "连接正常，模型可用"
 }
 

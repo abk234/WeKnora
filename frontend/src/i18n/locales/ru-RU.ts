@@ -1477,9 +1477,16 @@ export default {
       deleted: 'Модель удалена',
       deleteFailed: 'Не удалось удалить модель',
       setDefault: 'Установлено по умолчанию',
-      setDefaultFailed: 'Не удалось установить по умолчанию'
+      setDefaultFailed: 'Не удалось установить по умолчанию',
+      cannotEdit: 'Встроенные модели нельзя редактировать',
+      cannotDelete: 'Встроенные модели нельзя удалять'
     },
-    confirmDelete: 'Удалить эту модель?'
+    confirmDelete: 'Удалить эту модель?',
+    builtin: {
+      title: 'Встроенная модель',
+      description: 'Встроенные модели видны всем арендаторам, конфиденциальная информация будет скрыта, их нельзя редактировать или удалять.',
+      guideLink: 'Просмотреть руководство по управлению встроенными моделями'
+    }
   },
   ollamaSettings: {
     title: 'Настройки Ollama',
@@ -1520,6 +1527,12 @@ export default {
       downloadStarted: 'Начата загрузка модели {name}',
       downloadCompleted: 'Модель {name} загружена',
       progressFailed: 'Не удалось получить прогресс загрузки'
+    },
+    date: {
+      unknown: 'Неизвестно',
+      today: 'Сегодня',
+      yesterday: 'Вчера',
+      daysAgo: '{days} дней назад'
     }
   },
   mcpServiceDialog: {

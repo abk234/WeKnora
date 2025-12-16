@@ -1771,8 +1771,15 @@ export default {
       deleteFailed: "删除模型失败",
       setDefault: "已设为默认模型",
       setDefaultFailed: "设置默认模型失败",
+      cannotEdit: "内置模型不能编辑",
+      cannotDelete: "内置模型不能删除",
     },
     confirmDelete: "确定删除此模型吗？",
+    builtin: {
+      title: "内置模型",
+      description: "内置模型对所有租户可见，敏感信息会被隐藏，且不可编辑或删除。",
+      guideLink: "查看内置模型管理指南",
+    },
   },
   // 新增：Ollama 设置
   ollamaSettings: {
@@ -1814,6 +1821,12 @@ export default {
       downloadStarted: "已开始下载模型 {name}",
       downloadCompleted: "模型 {name} 下载完成",
       progressFailed: "查询下载进度失败",
+    },
+    date: {
+      unknown: "未知",
+      today: "今天",
+      yesterday: "昨天",
+      daysAgo: "{days} 天前",
     },
   },
   // 新增：MCP 服务对话框

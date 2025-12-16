@@ -138,7 +138,7 @@
             <p class="hint-title">{{ $t('agentSettings.systemPrompt.availablePlaceholders') }}</p>
             <ul class="placeholder-list">
               <li v-for="placeholder in availablePlaceholders" :key="placeholder.name">
-                <code v-html="`{{${placeholder.name}}}`"></code> - {{ placeholder.label }}（{{ placeholder.description }}）
+                <code v-html="`{{${placeholder.name}}}`"></code> - {{ placeholder.label }} ({{ placeholder.description }})
               </li>
             </ul>
             <p class="hint-tip">{{ $t('agentSettings.systemPrompt.hintPrefix') }} <code>&#123;&#123;</code> {{ $t('agentSettings.systemPrompt.hintSuffix') }}</p>

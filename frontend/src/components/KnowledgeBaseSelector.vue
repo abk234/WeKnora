@@ -21,7 +21,11 @@
         <div
           v-for="(kb, index) in filteredKnowledgeBases"
           :key="kb.id"
-          :class="['kb-item', { selected: isSelected(kb.id), highlighted: highlightedIndex === index }]"
+          :class="['kb-item', { 
+            selected: isSelected(kb.id), 
+            highlighted: highlightedIndex === index,
+            'not-ready': !isKnowledgeBaseReady(kb)
+          }]"
           @click="toggleKb(kb.id)"
           @mouseenter="highlightedIndex = index"
         >
@@ -44,6 +48,9 @@
             <div class="kb-name-wrap">
               <span class="kb-name">{{ kb.name }}</span>
               <span class="kb-docs">({{ kb.type === 'faq' ? (kb.chunk_count || 0) : (kb.knowledge_count || 0) }})</span>
+              <span v-if="!isKnowledgeBaseReady(kb)" class="kb-not-ready-badge" :title="$t('knowledgeBase.notInitialized')">
+                ⚠️
+              </span>
             </div>
           </div>
         </div>
@@ -103,15 +110,20 @@ const dropdownStyle = ref<Record<string, string>>({})
 const dropdownWidth = props.dropdownWidth ?? 300
 const offsetY = props.offsetY ?? 8
 
-// 过滤：只显示已初始化（有 embedding & summary）的
+// 过滤：显示所有知识库，但标记哪些已初始化
 const filteredKnowledgeBases = computed(() => {
-  const valid = knowledgeBases.value.filter(
-    k => k.embedding_model_id && k.summary_model_id
-  )
-  if (!searchQuery.value) return valid
-  const q = searchQuery.value.toLowerCase()
-  return valid.filter(k => k.name.toLowerCase().includes(q))
+  let filtered = knowledgeBases.value
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(k => k.name.toLowerCase().includes(q))
+  }
+  return filtered
 })
+
+// 检查知识库是否已初始化（有 embedding & summary）
+const isKnowledgeBaseReady = (kb: KnowledgeBase) => {
+  return Boolean(kb.embedding_model_id && kb.summary_model_id)
+}
 
 const selectedKbIds = computed(() => settingsStore.settings.selectedKnowledgeBases || [])
 
@@ -153,7 +165,11 @@ const moveSelection = (dir: number) => {
   })
 }
 
-const selectAll = () => settingsStore.selectKnowledgeBases(filteredKnowledgeBases.value.map(k => k.id))
+const selectAll = () => {
+  // Only select knowledge bases that are ready (have embedding and summary models)
+  const readyKbs = filteredKnowledgeBases.value.filter(k => isKnowledgeBaseReady(k))
+  settingsStore.selectKnowledgeBases(readyKbs.map(k => k.id))
+}
 const clearAll = () => settingsStore.clearKnowledgeBases()
 
 const close = () => {
@@ -426,6 +442,14 @@ watch(() => props.visible, async (v) => {
 
 .kb-item.selected { background: #eefdf5; }
 
+.kb-item.not-ready {
+  opacity: 0.7;
+}
+
+.kb-item.not-ready:hover {
+  opacity: 0.9;
+}
+
 .kb-item-left {
   display: flex;
   align-items: center;
@@ -466,6 +490,11 @@ watch(() => props.visible, async (v) => {
 .kb-name-wrap { display:flex; flex-direction: row; align-items: center; gap: 4px; min-width: 0; }
 .kb-name { font-size: 12px; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
 .kb-docs { font-size: 11px; color: #8b9196; flex-shrink: 0; }
+.kb-not-ready-badge {
+  font-size: 11px;
+  flex-shrink: 0;
+  cursor: help;
+}
 
 .kb-empty { padding: 20px 8px; text-align: center; color: #9aa0a6; font-size: 12px; }
 

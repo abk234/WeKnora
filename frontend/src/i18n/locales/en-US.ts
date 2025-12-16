@@ -1768,9 +1768,17 @@ export default {
       deleted: 'Model deleted',
       deleteFailed: 'Failed to delete model',
       setDefault: 'Set as default',
-      setDefaultFailed: 'Failed to set default model'
+      setDefaultFailed: 'Failed to set default model',
+      cannotEdit: 'Built-in models cannot be edited',
+      cannotDelete: 'Built-in models cannot be deleted'
     },
-    confirmDelete: 'Are you sure you want to delete this model?'
+    confirmDelete: 'Are you sure you want to delete this model?',
+    builtin: {
+      title: 'Built-in Model',
+      description: 'Built-in models are visible to all tenants, sensitive information will be hidden, and cannot be edited or deleted.',
+      guideLink: 'View built-in model management guide',
+      tag: 'Built-in'
+    }
   },
   // New: Ollama Settings
   ollamaSettings: {
@@ -1789,7 +1797,9 @@ export default {
       label: 'Service URL',
       desc: 'The API address of the local Ollama service, auto-detected by the system. To modify, set it in the .env file.',
       placeholder: 'http://localhost:11434',
-      failed: 'Connection failed. Please check whether Ollama is running or the URL is correct'
+      failed: 'Connection failed. Please check whether Ollama is running or the URL is correct',
+      errorDetails: 'Error Details:',
+      suggestion: 'Suggestion:'
     },
     download: {
       title: 'Download Models',
@@ -1812,6 +1822,12 @@ export default {
       downloadStarted: 'Started downloading model {name}',
       downloadCompleted: 'Model {name} downloaded successfully',
       progressFailed: 'Failed to query download progress'
+    },
+    date: {
+      unknown: 'Unknown',
+      today: 'Today',
+      yesterday: 'Yesterday',
+      daysAgo: '{days} days ago'
     }
   },
   // New: MCP Service Dialog

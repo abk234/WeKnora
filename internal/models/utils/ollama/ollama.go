@@ -26,9 +26,10 @@ type OllamaService struct {
 
 // GetOllamaService gets Ollama service instance (singleton pattern)
 func GetOllamaService() (*OllamaService, error) {
-	// Get Ollama base URL from environment variable, if not set use provided baseURL or default value
+	// Get Ollama base URL from environment variable, if not set use default value
 	logger.GetLogger(context.Background()).Infof("Ollama base URL: %s", os.Getenv("OLLAMA_BASE_URL"))
-	baseURL := "http://localhost:11434"
+	// Default to host.docker.internal for Docker environments
+	baseURL := "http://host.docker.internal:11434"
 	envURL := os.Getenv("OLLAMA_BASE_URL")
 	if envURL != "" {
 		baseURL = envURL

@@ -77,9 +77,20 @@
           <t-alert 
             v-if="connectionStatus === false"
             theme="warning"
-            :message="$t('ollamaSettings.address.failed')"
             style="margin-top: 8px;"
-          />
+          >
+            <template #message>
+              <div>
+                <div>{{ $t('ollamaSettings.address.failed') }}</div>
+                <div v-if="connectionError" style="margin-top: 8px; font-size: 12px; color: #666;">
+                  <div><strong>{{ $t('ollamaSettings.address.errorDetails') }}</strong> {{ connectionError }}</div>
+                <div v-if="connectionSuggestion" style="margin-top: 4px;">
+                    <strong>{{ $t('ollamaSettings.address.suggestion') }}</strong> {{ connectionSuggestion }}
+                  </div>
+                </div>
+              </div>
+            </template>
+          </t-alert>
         </div>
       </div>
 
@@ -175,12 +186,14 @@ import { useI18n } from 'vue-i18n'
 import { checkOllamaStatus, listOllamaModels, downloadOllamaModel, getDownloadProgress, type OllamaModelInfo } from '@/api/initialization'
 
 const settingsStore = useSettingsStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const localBaseUrl = ref(settingsStore.settings.ollamaConfig?.baseUrl ?? '')
 
 const testing = ref(false)
 const connectionStatus = ref<boolean | null>(null)
+const connectionError = ref<string>('')
+const connectionSuggestion = ref<string>('')
 const loadingModels = ref(false)
 const downloadedModels = ref<OllamaModelInfo[]>([])
 const downloading = ref(false)
@@ -191,6 +204,8 @@ const downloadProgress = ref(0)
 const testConnection = async () => {
   testing.value = true
   connectionStatus.value = null
+  connectionError.value = ''
+  connectionSuggestion.value = ''
   
   try {
     // 保存配置
@@ -208,13 +223,19 @@ const testConnection = async () => {
     connectionStatus.value = result.available
     
     if (connectionStatus.value) {
+      connectionError.value = ''
+      connectionSuggestion.value = ''
       MessagePlugin.success(t('ollamaSettings.toasts.connected'))
       refreshModels()
     } else {
+      connectionError.value = result.error || t('ollamaSettings.toasts.connectFailed')
+      connectionSuggestion.value = (result as any).suggestion || ''
       MessagePlugin.error(result.error || t('ollamaSettings.toasts.connectFailed'))
     }
   } catch (error: any) {
     connectionStatus.value = false
+    connectionError.value = error.message || t('ollamaSettings.toasts.connectFailed')
+    connectionSuggestion.value = ''
     MessagePlugin.error(error.message || t('ollamaSettings.toasts.connectFailed'))
   } finally {
     testing.value = false
@@ -230,7 +251,7 @@ const refreshModels = async () => {
     const models = await listOllamaModels()
     downloadedModels.value = models
   } catch (error: any) {
-    console.error('获取模型列表失败:', error)
+    console.error('Failed to get model list:', error)
     MessagePlugin.error(error.message || t('ollamaSettings.toasts.listFailed'))
   } finally {
     loadingModels.value = false
@@ -246,23 +267,23 @@ const formatSize = (bytes: number): string => {
   return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
 }
 
-// 格式化日期
+// Format date
 const formatDate = (dateStr: string): string => {
-  if (!dateStr) return '未知'
+  if (!dateStr) return t('ollamaSettings.date.unknown')
   
   const date = new Date(dateStr)
-  // 检查日期是否有效
-  if (isNaN(date.getTime())) return '未知'
+  // Check if date is valid
+  if (isNaN(date.getTime())) return t('ollamaSettings.date.unknown')
   
   const now = new Date()
   const diff = now.getTime() - date.getTime()
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   
-  if (days === 0) return '今天'
-  if (days === 1) return '昨天'
-  if (days < 7) return `${days} 天前`
-  if (days < 0) return date.toLocaleDateString('zh-CN')
-  return date.toLocaleDateString('zh-CN')
+  if (days === 0) return t('ollamaSettings.date.today')
+  if (days === 1) return t('ollamaSettings.date.yesterday')
+  if (days < 7) return t('ollamaSettings.date.daysAgo', { days })
+  if (days < 0) return date.toLocaleDateString(locale.value || 'en-US')
+  return date.toLocaleDateString(locale.value || 'en-US')
 }
 
 // 下载模型
@@ -313,7 +334,7 @@ const downloadModel = async () => {
       }
     }, 1000)
   } catch (error: any) {
-    console.error('下载失败:', error)
+    console.error('Download failed:', error)
     MessagePlugin.error(error.message || t('ollamaSettings.toasts.downloadFailed'))
     downloading.value = false
     downloadProgress.value = 0
@@ -337,14 +358,19 @@ const initOllamaBaseUrl = async () => {
     }
     
     // 直接使用初始化时获取的状态，避免重复调用
-      connectionStatus.value = result.available
-      if (result.available) {
-        refreshModels()
+    connectionStatus.value = result.available
+    if (result.available) {
+      connectionError.value = ''
+      connectionSuggestion.value = ''
+      refreshModels()
+    } else {
+      connectionError.value = result.error || ''
+      connectionSuggestion.value = (result as any).suggestion || ''
     }
     
     return result
   } catch (error) {
-    console.error('初始化 Ollama 地址失败:', error)
+    console.error('Failed to initialize Ollama address:', error)
     // 如果获取失败，使用默认值或 store 中的值
     if (!localBaseUrl.value) {
       localBaseUrl.value = 'http://localhost:11434'
